@@ -17,8 +17,8 @@
 use std::path::PathBuf;
 use std::thread;
 use std::time::Duration;
-use windows_wfp::{WfpEngine, FilterBuilder, WfpResult, initialize_wfp};
-use domain_types::{RuleDef, Direction, RuleAction, FilterWeight};
+use domain_types::{Direction, FilterWeight, RuleAction, RuleDef};
+use windows_wfp::{initialize_wfp, FilterBuilder, WfpEngine, WfpResult};
 
 fn main() -> WfpResult<()> {
     println!("🔥 windows-wfp - Simple Block Demo\n");

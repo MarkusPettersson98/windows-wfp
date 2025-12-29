@@ -24,12 +24,9 @@
 use std::path::PathBuf;
 use std::thread;
 use std::time::Duration;
+use domain_types::{Direction, FilterWeight, RuleAction, RuleDef};
 use windows_wfp::{
-    WfpEngine, FilterBuilder, WfpEventSubscription,
-    NetworkEvent, WfpResult, initialize_wfp,
-};
-use domain_types::{
-    RuleDef, Direction, RuleAction, FilterWeight,
+    initialize_wfp, FilterBuilder, NetworkEvent, WfpEngine, WfpEventSubscription, WfpResult,
 };
 
 fn main() -> WfpResult<()> {
@@ -184,8 +181,10 @@ fn is_elevated() -> bool {
     #[cfg(windows)]
     {
         use std::mem;
-        use windows::Win32::Foundation::{HANDLE, CloseHandle};
-        use windows::Win32::Security::{GetTokenInformation, TokenElevation, TOKEN_ELEVATION, TOKEN_QUERY};
+        use windows::Win32::Foundation::{CloseHandle, HANDLE};
+        use windows::Win32::Security::{
+            GetTokenInformation, TokenElevation, TOKEN_ELEVATION, TOKEN_QUERY,
+        };
         use windows::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken};
 
         unsafe {
