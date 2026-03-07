@@ -9,8 +9,6 @@ license.workspace = true
 [dependencies]
 windows = { workspace = true }
 thiserror = { workspace = true }
-tracing = { workspace = true }
-domain-types = { path = "../domain-types" }
 
 [build-dependencies]
 windows = { workspace = true }
