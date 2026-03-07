@@ -169,4 +169,62 @@ mod tests {
         assert_eq!(Protocol::Ah.as_u8(), 51);
         assert_eq!(Protocol::Icmpv6.as_u8(), 58);
     }
+
+    #[test]
+    fn test_ip_addr_mask_boundary_prefixes_v4() {
+        let zero = IpAddrMask::from_cidr("0.0.0.0/0").unwrap();
+        assert_eq!(zero.prefix_len, 0);
+
+        let host = IpAddrMask::from_cidr("10.0.0.1/32").unwrap();
+        assert_eq!(host.prefix_len, 32);
+    }
+
+    #[test]
+    fn test_ip_addr_mask_boundary_prefixes_v6() {
+        let zero = IpAddrMask::from_cidr("::/0").unwrap();
+        assert_eq!(zero.prefix_len, 0);
+        assert!(zero.is_ipv6());
+
+        let host = IpAddrMask::from_cidr("::1/128").unwrap();
+        assert_eq!(host.prefix_len, 128);
+    }
+
+    #[test]
+    fn test_ip_addr_mask_equality() {
+        let a = IpAddrMask::new("10.0.0.1".parse().unwrap(), 24);
+        let b = IpAddrMask::new("10.0.0.1".parse().unwrap(), 24);
+        assert_eq!(a, b);
+
+        let c = IpAddrMask::new("10.0.0.1".parse().unwrap(), 16);
+        assert_ne!(a, c);
+    }
+
+    #[test]
+    fn test_ip_addr_mask_multiple_slashes() {
+        assert!(IpAddrMask::from_cidr("10.0.0.1/24/8").is_err());
+    }
+
+    #[test]
+    fn test_ip_addr_mask_empty_string() {
+        assert!(IpAddrMask::from_cidr("").is_err());
+    }
+
+    #[test]
+    fn test_ip_addr_mask_v4_is_not_ipv6() {
+        let mask = IpAddrMask::new("192.168.0.1".parse().unwrap(), 24);
+        assert!(!mask.is_ipv6());
+    }
+
+    #[test]
+    fn test_ip_addr_mask_v6_is_ipv6() {
+        let mask = IpAddrMask::new("::1".parse().unwrap(), 128);
+        assert!(mask.is_ipv6());
+    }
+
+    #[test]
+    fn test_protocol_copy() {
+        let p = Protocol::Tcp;
+        let p2 = p; // Copy
+        assert_eq!(p, p2);
+    }
 }

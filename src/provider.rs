@@ -1,6 +1,6 @@
 //! WFP Provider and Sublayer management
 //!
-//! Handles registration of windows-wfp provider and sublayer in WFP.
+//! Handles registration of WFP provider and sublayer.
 
 use crate::constants::{WFP_PROVIDER_GUID, WFP_SUBLAYER_GUID};
 use crate::engine::WfpEngine;
