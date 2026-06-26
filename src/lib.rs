@@ -99,3 +99,38 @@ pub use filter_enum::{FilterAction, FilterEnumerator, FilterInfo};
 pub use layer::FilterWeight;
 pub use provider::{WfpProvider, WfpSublayer, initialize_wfp};
 pub use transaction::WfpTransaction;
+
+#[cfg(feature = "cxx")]
+#[cxx::bridge(namespace = "mullvad::libwfp")]
+mod ffi {
+    //! C++ bindings for windows-wfp.
+    extern "Rust" {
+        type WfpError;
+        type WfpEngine;
+        #[Self = "WfpEngine"]
+        /// Open a new WFP engine session
+        ///
+        /// Requires administrator privileges.
+        ///
+        /// # Errors
+        ///
+        /// Returns `WfpError::EngineOpenFailed` if:
+        /// - Insufficient permissions (not running as admin)
+        /// - WFP service not available
+        /// - Session creation failed
+        fn open() -> Result<Box<WfpEngine>>;
+        #[Self = "WfpEngine"]
+        /// Open a new WFP engine session with custom flags
+        ///
+        /// # Arguments
+        ///
+        /// * `flags` - Session flags (e.g., `FWPM_SESSION_FLAG_DYNAMIC` for automatic cleanup)
+        ///
+        /// # Errors
+        ///
+        /// Returns `WfpError::EngineOpenFailed` if session creation fails.
+        fn open_with_flags(flags: u32) -> Result<Box<WfpEngine>>;
+
+        fn initialize_wfp(engine: &WfpEngine) -> Result<()>;
+    }
+}

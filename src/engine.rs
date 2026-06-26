@@ -55,6 +55,12 @@ impl WfpEngine {
         Self::new_with_flags(FWPM_SESSION_FLAG_DYNAMIC)
     }
 
+    /// C++ bindings. See [Self::new] for docs.
+    #[cfg(feature = "cxx")]
+    pub fn open() -> WfpResult<Box<Self>> {
+        Self::new().map(Box::new)
+    }
+
     /// Open a new WFP engine session with custom flags
     ///
     /// # Arguments
@@ -101,6 +107,12 @@ impl WfpEngine {
         }
 
         Ok(Self { handle })
+    }
+
+    /// C++ bindings. See [Self::new_with_flags] for docs.
+    #[cfg(feature = "cxx")]
+    pub fn open_with_flags(flags: u32) -> WfpResult<Box<Self>> {
+        Self::new_with_flags(flags).map(Box::new)
     }
 
     /// Get raw handle to WFP engine session
