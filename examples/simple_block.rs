@@ -17,8 +17,8 @@
 use std::thread;
 use std::time::Duration;
 use windows_wfp::{
-    initialize_wfp, Action, Direction, FilterBuilder, FilterRule, FilterWeight, WfpEngine,
-    WfpResult,
+    Action, Direction, FilterBuilder, FilterRule, FilterWeight, WfpEngine, WfpResult,
+    initialize_wfp,
 };
 
 fn main() -> WfpResult<()> {

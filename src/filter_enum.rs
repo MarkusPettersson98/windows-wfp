@@ -21,14 +21,14 @@ use crate::engine::WfpEngine;
 use crate::errors::{WfpError, WfpResult};
 use std::path::PathBuf;
 use std::ptr;
-use windows::core::GUID;
 use windows::Win32::Foundation::{ERROR_SUCCESS, HANDLE};
 use windows::Win32::NetworkManagement::WindowsFilteringPlatform::{
-    FwpmFilterCreateEnumHandle0, FwpmFilterDestroyEnumHandle0, FwpmFilterEnum0, FwpmFreeMemory0,
-    FWPM_FILTER0, FWP_ACTION_BLOCK, FWP_ACTION_CALLOUT_INSPECTION, FWP_ACTION_CALLOUT_TERMINATING,
-    FWP_ACTION_CALLOUT_UNKNOWN, FWP_ACTION_PERMIT, FWP_BYTE_BLOB_TYPE, FWP_EMPTY, FWP_UINT16,
-    FWP_UINT32, FWP_UINT64, FWP_UINT8,
+    FWP_ACTION_BLOCK, FWP_ACTION_CALLOUT_INSPECTION, FWP_ACTION_CALLOUT_TERMINATING,
+    FWP_ACTION_CALLOUT_UNKNOWN, FWP_ACTION_PERMIT, FWP_BYTE_BLOB_TYPE, FWP_EMPTY, FWP_UINT8,
+    FWP_UINT16, FWP_UINT32, FWP_UINT64, FWPM_FILTER0, FwpmFilterCreateEnumHandle0,
+    FwpmFilterDestroyEnumHandle0, FwpmFilterEnum0, FwpmFreeMemory0,
 };
+use windows::core::GUID;
 
 use crate::constants::CONDITION_ALE_APP_ID;
 
@@ -107,14 +107,17 @@ impl FilterEnumerator {
     /// Returns an error if the enumeration handle cannot be created or enumeration fails.
     /// Requires administrator privileges.
     pub fn all(engine: &WfpEngine) -> WfpResult<Vec<FilterInfo>> {
-        Self::enumerate_raw(engine, |filter_array, num_returned, acc: &mut Vec<FilterInfo>| {
-            for i in 0..num_returned {
-                unsafe {
-                    let filter = &**filter_array.offset(i as isize);
-                    acc.push(parse_filter(filter));
+        Self::enumerate_raw(
+            engine,
+            |filter_array, num_returned, acc: &mut Vec<FilterInfo>| {
+                for i in 0..num_returned {
+                    unsafe {
+                        let filter = &**filter_array.offset(i as isize);
+                        acc.push(parse_filter(filter));
+                    }
                 }
-            }
-        })
+            },
+        )
     }
 
     /// Count all active WFP filters without collecting details
@@ -248,11 +251,7 @@ unsafe fn parse_filter(filter: &FWPM_FILTER0) -> FilterInfo {
         FWP_UINT32 => filter.weight.Anonymous.uint32 as u64,
         FWP_UINT64 => {
             let ptr = filter.weight.Anonymous.uint64;
-            if ptr.is_null() {
-                0
-            } else {
-                *ptr
-            }
+            if ptr.is_null() { 0 } else { *ptr }
         }
         FWP_EMPTY => 0,
         _ => 0,

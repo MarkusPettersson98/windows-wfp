@@ -7,11 +7,11 @@ use crate::engine::WfpEngine;
 use crate::errors::{WfpError, WfpResult};
 use crate::transaction::WfpTransaction;
 use std::ptr;
-use windows::core::PWSTR;
 use windows::Win32::Foundation::ERROR_SUCCESS;
 use windows::Win32::NetworkManagement::WindowsFilteringPlatform::{
-    FwpmProviderAdd0, FwpmSubLayerAdd0, FWPM_PROVIDER0, FWPM_SUBLAYER0,
+    FWPM_PROVIDER0, FWPM_SUBLAYER0, FwpmProviderAdd0, FwpmSubLayerAdd0,
 };
+use windows::core::PWSTR;
 
 /// WFP Provider for windows-wfp
 ///

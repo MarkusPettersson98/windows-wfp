@@ -5,18 +5,18 @@
 
 use crate::engine::WfpEngine;
 use crate::errors::{WfpError, WfpResult};
-use std::ffi::{c_void, OsString};
+use std::ffi::{OsString, c_void};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::os::windows::ffi::OsStringExt;
 use std::path::PathBuf;
 use std::sync::mpsc;
 use std::time::{Duration, SystemTime};
-use windows::core::GUID;
 use windows::Win32::Foundation::{ERROR_SUCCESS, FILETIME, HANDLE};
 use windows::Win32::NetworkManagement::WindowsFilteringPlatform::{
-    FwpmNetEventSubscribe0, FwpmNetEventUnsubscribe0, FWPM_NET_EVENT1, FWPM_NET_EVENT_CALLBACK0,
-    FWPM_NET_EVENT_SUBSCRIPTION0,
+    FWPM_NET_EVENT_CALLBACK0, FWPM_NET_EVENT_SUBSCRIPTION0, FWPM_NET_EVENT1,
+    FwpmNetEventSubscribe0, FwpmNetEventUnsubscribe0,
 };
+use windows::core::GUID;
 
 /// Network event from WFP
 ///
@@ -471,7 +471,10 @@ mod tests {
     fn test_network_event_type_display() {
         assert_eq!(NetworkEventType::ClassifyDrop.to_string(), "ClassifyDrop");
         assert_eq!(NetworkEventType::ClassifyAllow.to_string(), "ClassifyAllow");
-        assert_eq!(NetworkEventType::CapabilityDrop.to_string(), "CapabilityDrop");
+        assert_eq!(
+            NetworkEventType::CapabilityDrop.to_string(),
+            "CapabilityDrop"
+        );
         assert_eq!(NetworkEventType::Other(42).to_string(), "Other(42)");
     }
 }

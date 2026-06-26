@@ -4,11 +4,11 @@
 
 use crate::errors::{WfpError, WfpResult};
 use std::ptr;
-use windows::core::{PCWSTR, PWSTR};
 use windows::Win32::Foundation::{ERROR_SUCCESS, HANDLE};
 use windows::Win32::NetworkManagement::WindowsFilteringPlatform::{
-    FwpmEngineClose0, FwpmEngineOpen0, FWPM_SESSION0, FWPM_SESSION_FLAG_DYNAMIC,
+    FWPM_SESSION_FLAG_DYNAMIC, FWPM_SESSION0, FwpmEngineClose0, FwpmEngineOpen0,
 };
+use windows::core::{PCWSTR, PWSTR};
 
 /// WFP Engine session with RAII handle management
 ///

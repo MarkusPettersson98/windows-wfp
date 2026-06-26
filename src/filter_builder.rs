@@ -35,15 +35,15 @@ use crate::filter::{Action, FilterRule};
 use crate::layer;
 use std::net::IpAddr;
 use std::ptr;
-use windows::core::{GUID, PWSTR};
 use windows::Win32::Foundation::ERROR_SUCCESS;
 use windows::Win32::NetworkManagement::WindowsFilteringPlatform::{
-    FwpmFilterAdd0, FwpmFilterDeleteById0, FwpmFreeMemory0, FwpmGetAppIdFromFileName0,
-    FWPM_FILTER0, FWPM_FILTER_CONDITION0, FWPM_FILTER_FLAGS, FWP_ACTION_BLOCK, FWP_ACTION_PERMIT,
-    FWP_ACTION_TYPE, FWP_BYTE_BLOB, FWP_BYTE_BLOB_TYPE, FWP_CONDITION_VALUE0, FWP_MATCH_EQUAL,
-    FWP_UINT16, FWP_UINT64, FWP_UINT8, FWP_V4_ADDR_AND_MASK, FWP_V4_ADDR_MASK,
-    FWP_V6_ADDR_AND_MASK, FWP_V6_ADDR_MASK,
+    FWP_ACTION_BLOCK, FWP_ACTION_PERMIT, FWP_ACTION_TYPE, FWP_BYTE_BLOB, FWP_BYTE_BLOB_TYPE,
+    FWP_CONDITION_VALUE0, FWP_MATCH_EQUAL, FWP_UINT8, FWP_UINT16, FWP_UINT64, FWP_V4_ADDR_AND_MASK,
+    FWP_V4_ADDR_MASK, FWP_V6_ADDR_AND_MASK, FWP_V6_ADDR_MASK, FWPM_FILTER_CONDITION0,
+    FWPM_FILTER_FLAGS, FWPM_FILTER0, FwpmFilterAdd0, FwpmFilterDeleteById0, FwpmFreeMemory0,
+    FwpmGetAppIdFromFileName0,
 };
+use windows::core::{GUID, PWSTR};
 
 /// WFP Filter builder
 ///

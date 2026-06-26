@@ -97,5 +97,5 @@ pub use filter::{Action, Direction, FilterRule};
 pub use filter_builder::FilterBuilder;
 pub use filter_enum::{FilterAction, FilterEnumerator, FilterInfo};
 pub use layer::FilterWeight;
-pub use provider::{initialize_wfp, WfpProvider, WfpSublayer};
+pub use provider::{WfpProvider, WfpSublayer, initialize_wfp};
 pub use transaction::WfpTransaction;
