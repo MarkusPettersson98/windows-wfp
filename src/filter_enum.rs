@@ -209,7 +209,7 @@ impl FilterEnumerator {
 /// # Safety
 ///
 /// The filter pointer must be valid.
-unsafe fn parse_filter(filter: &FWPM_FILTER0) -> FilterInfo {
+unsafe fn parse_filter(filter: &FWPM_FILTER0) -> FilterInfo { unsafe {
     let name = if !filter.displayData.name.is_null() {
         filter
             .displayData
@@ -271,13 +271,13 @@ unsafe fn parse_filter(filter: &FWPM_FILTER0) -> FilterInfo {
         app_path,
         num_conditions: filter.numFilterConditions,
     }
-}
+}}
 
 /// Extract application path from filter conditions
 ///
 /// Looks for FWPM_CONDITION_ALE_APP_ID in the filter's conditions
 /// and decodes the wide-string blob.
-unsafe fn extract_app_path(filter: &FWPM_FILTER0) -> Option<PathBuf> {
+unsafe fn extract_app_path(filter: &FWPM_FILTER0) -> Option<PathBuf> { unsafe {
     if filter.numFilterConditions == 0 || filter.filterCondition.is_null() {
         return None;
     }
@@ -312,7 +312,7 @@ unsafe fn extract_app_path(filter: &FWPM_FILTER0) -> Option<PathBuf> {
     String::from_utf16(&wide_slice[..null_pos])
         .ok()
         .map(PathBuf::from)
-}
+}}
 
 #[cfg(test)]
 mod tests {

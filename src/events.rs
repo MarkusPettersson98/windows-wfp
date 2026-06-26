@@ -208,7 +208,7 @@ impl Drop for WfpEventSubscription {
 /// - Validate the event pointer is not null
 /// - Parse the FWPM_NET_EVENT1 structure
 /// - Send the parsed event to the channel without blocking
-unsafe extern "system" fn event_callback(context: *mut c_void, event_ptr: *const FWPM_NET_EVENT1) {
+unsafe extern "system" fn event_callback(context: *mut c_void, event_ptr: *const FWPM_NET_EVENT1) { unsafe {
     // Validate pointers
     if context.is_null() || event_ptr.is_null() {
         return;
@@ -223,14 +223,14 @@ unsafe extern "system" fn event_callback(context: *mut c_void, event_ptr: *const
         // Send to channel (non-blocking - drops event if channel is full)
         let _ = sender.send(network_event);
     }
-}
+}}
 
 /// Parse FWPM_NET_EVENT1 into NetworkEvent
 ///
 /// # Safety
 ///
 /// The event pointer must be valid and point to a complete FWPM_NET_EVENT1 structure.
-unsafe fn parse_network_event(event: &FWPM_NET_EVENT1) -> Option<NetworkEvent> {
+unsafe fn parse_network_event(event: &FWPM_NET_EVENT1) -> Option<NetworkEvent> { unsafe {
     let header = &event.header;
     let event_type = NetworkEventType::from(event.r#type.0 as u32);
 
@@ -289,7 +289,7 @@ unsafe fn parse_network_event(event: &FWPM_NET_EVENT1) -> Option<NetworkEvent> {
         filter_id,
         layer_id,
     })
-}
+}}
 
 /// Convert FILETIME to SystemTime
 fn filetime_to_systemtime(ft: &FILETIME) -> SystemTime {
@@ -313,7 +313,7 @@ fn filetime_to_systemtime(ft: &FILETIME) -> SystemTime {
 }
 
 /// Parse wide string (null-terminated UTF-16)
-unsafe fn parse_wide_string(ptr: *const u16) -> Option<OsString> {
+unsafe fn parse_wide_string(ptr: *const u16) -> Option<OsString> { unsafe {
     if ptr.is_null() {
         return None;
     }
@@ -331,43 +331,43 @@ unsafe fn parse_wide_string(ptr: *const u16) -> Option<OsString> {
     // Convert to OsString
     let slice = std::slice::from_raw_parts(ptr, len);
     Some(OsString::from_wide(slice))
-}
+}}
 
 /// Parse IPv4 address from union (reads first 4 bytes as u32) - HEADER1_0 version
 unsafe fn parse_ipv4_union(
     addr_union: &windows::Win32::NetworkManagement::WindowsFilteringPlatform::FWPM_NET_EVENT_HEADER1_0,
-) -> Option<IpAddr> {
+) -> Option<IpAddr> { unsafe {
     // Union contains localAddrV4 as u32
     let addr_u32 = addr_union.localAddrV4;
     let bytes = addr_u32.to_ne_bytes();
     Some(IpAddr::V4(Ipv4Addr::from(bytes)))
-}
+}}
 
 /// Parse IPv6 address from union (reads 16-byte array) - HEADER1_0 version
 unsafe fn parse_ipv6_union(
     addr_union: &windows::Win32::NetworkManagement::WindowsFilteringPlatform::FWPM_NET_EVENT_HEADER1_0,
-) -> Option<IpAddr> {
+) -> Option<IpAddr> { unsafe {
     // Union contains localAddrV6 as byte[16]
     let bytes = addr_union.localAddrV6.byteArray16;
     Some(IpAddr::V6(Ipv6Addr::from(bytes)))
-}
+}}
 
 /// Parse IPv4 address from remote union (HEADER1_1 version)
 unsafe fn parse_ipv4_union_remote(
     addr_union: &windows::Win32::NetworkManagement::WindowsFilteringPlatform::FWPM_NET_EVENT_HEADER1_1,
-) -> Option<IpAddr> {
+) -> Option<IpAddr> { unsafe {
     let addr_u32 = addr_union.remoteAddrV4;
     let bytes = addr_u32.to_ne_bytes();
     Some(IpAddr::V4(Ipv4Addr::from(bytes)))
-}
+}}
 
 /// Parse IPv6 address from remote union (HEADER1_1 version)
 unsafe fn parse_ipv6_union_remote(
     addr_union: &windows::Win32::NetworkManagement::WindowsFilteringPlatform::FWPM_NET_EVENT_HEADER1_1,
-) -> Option<IpAddr> {
+) -> Option<IpAddr> { unsafe {
     let bytes = addr_union.remoteAddrV6.byteArray16;
     Some(IpAddr::V6(Ipv6Addr::from(bytes)))
-}
+}}
 
 #[cfg(test)]
 mod tests {

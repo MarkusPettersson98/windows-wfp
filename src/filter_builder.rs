@@ -365,11 +365,10 @@ impl FilterBuilder {
             let result = FwpmFilterAdd0(engine.handle(), &filter, None, Some(&mut filter_id));
 
             // Free memory allocated by FwpmGetAppIdFromFileName0 regardless of add result
-            if let Some(mut blob_ptr) = app_id_blob {
-                if !blob_ptr.is_null() {
+            if let Some(mut blob_ptr) = app_id_blob
+                && !blob_ptr.is_null() {
                     FwpmFreeMemory0(&mut blob_ptr as *mut _ as *mut *mut _);
                 }
-            }
 
             if result != ERROR_SUCCESS.0 {
                 return Err(WfpError::FilterAddFailed(format!(
