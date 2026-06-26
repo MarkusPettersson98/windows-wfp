@@ -9,19 +9,19 @@ description = "Safe Rust wrapper for the Windows Filtering Platform (WFP) kernel
 repository = "https://github.com/lostyzen/windows-wfp"
 documentation = "https://docs.rs/windows-wfp"
 readme = "README.md"
-keywords = ["windows", "firewall", "wfp", "network", "filter"]
-categories = ["os::windows-apis", "network-programming"]
-
-[dependencies]
-windows = { version = "0.58", features = [
-    "Win32_Foundation",
-    "Win32_NetworkManagement_WindowsFilteringPlatform",
-    "Win32_Security",
-    "Win32_System_Rpc",
-    "Win32_System_Threading",
-] }
-thiserror = "2.0"
+keywords = ["filter", "firewall", "network", "wfp", "windows"]
+categories = ["network-programming", "os::windows-apis"]
 
 [package.metadata.docs.rs]
 default-target = "x86_64-pc-windows-msvc"
 targets = ["x86_64-pc-windows-msvc"]
+
+[dependencies]
+thiserror = "2.0"
+windows = { version = "0.58", features = [
+  "Win32_Foundation",
+  "Win32_NetworkManagement_WindowsFilteringPlatform",
+  "Win32_Security",
+  "Win32_System_Rpc",
+  "Win32_System_Threading",
+] }
