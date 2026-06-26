@@ -16,6 +16,12 @@ categories = ["network-programming", "os::windows-apis"]
 default-target = "x86_64-pc-windows-msvc"
 targets = ["x86_64-pc-windows-msvc"]
 
+[lib]
+# NOTE: 'staticlib' is used to link with C++.
+crate-type = ["staticlib"]
+name = "wfprs"
+path = "./src/lib.rs"
+
 [dependencies]
 thiserror = "2.0"
 windows = { version = "0.62", features = [
