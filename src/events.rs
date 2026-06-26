@@ -208,88 +208,92 @@ impl Drop for WfpEventSubscription {
 /// - Validate the event pointer is not null
 /// - Parse the FWPM_NET_EVENT1 structure
 /// - Send the parsed event to the channel without blocking
-unsafe extern "system" fn event_callback(context: *mut c_void, event_ptr: *const FWPM_NET_EVENT1) { unsafe {
-    // Validate pointers
-    if context.is_null() || event_ptr.is_null() {
-        return;
-    }
+unsafe extern "system" fn event_callback(context: *mut c_void, event_ptr: *const FWPM_NET_EVENT1) {
+    unsafe {
+        // Validate pointers
+        if context.is_null() || event_ptr.is_null() {
+            return;
+        }
 
-    // Recover the sender from the context
-    let sender = &*(context as *const mpsc::Sender<NetworkEvent>);
+        // Recover the sender from the context
+        let sender = &*(context as *const mpsc::Sender<NetworkEvent>);
 
-    // Parse the event
-    let event = &*event_ptr;
-    if let Some(network_event) = parse_network_event(event) {
-        // Send to channel (non-blocking - drops event if channel is full)
-        let _ = sender.send(network_event);
+        // Parse the event
+        let event = &*event_ptr;
+        if let Some(network_event) = parse_network_event(event) {
+            // Send to channel (non-blocking - drops event if channel is full)
+            let _ = sender.send(network_event);
+        }
     }
-}}
+}
 
 /// Parse FWPM_NET_EVENT1 into NetworkEvent
 ///
 /// # Safety
 ///
 /// The event pointer must be valid and point to a complete FWPM_NET_EVENT1 structure.
-unsafe fn parse_network_event(event: &FWPM_NET_EVENT1) -> Option<NetworkEvent> { unsafe {
-    let header = &event.header;
-    let event_type = NetworkEventType::from(event.r#type.0 as u32);
+unsafe fn parse_network_event(event: &FWPM_NET_EVENT1) -> Option<NetworkEvent> {
+    unsafe {
+        let header = &event.header;
+        let event_type = NetworkEventType::from(event.r#type.0 as u32);
 
-    // Parse timestamp (FILETIME to SystemTime)
-    let timestamp = filetime_to_systemtime(&header.timeStamp);
+        // Parse timestamp (FILETIME to SystemTime)
+        let timestamp = filetime_to_systemtime(&header.timeStamp);
 
-    // Parse application path (wide string) - appId.data is *mut u8, need to cast
-    let app_path = if !header.appId.data.is_null() {
-        parse_wide_string(header.appId.data as *const u16).map(PathBuf::from)
-    } else {
-        None
-    };
+        // Parse application path (wide string) - appId.data is *mut u8, need to cast
+        let app_path = if !header.appId.data.is_null() {
+            parse_wide_string(header.appId.data as *const u16).map(PathBuf::from)
+        } else {
+            None
+        };
 
-    // Parse IP addresses based on IP version (ipVersion: 0=V4, 1=V6)
-    let (local_addr, remote_addr) = if header.ipVersion.0 == 0 {
-        // IPv4
-        unsafe {
-            let local = parse_ipv4_union(&header.Anonymous1);
-            let remote = parse_ipv4_union_remote(&header.Anonymous2);
-            (local, remote)
-        }
-    } else if header.ipVersion.0 == 1 {
-        // IPv6
-        unsafe {
-            let local = parse_ipv6_union(&header.Anonymous1);
-            let remote = parse_ipv6_union_remote(&header.Anonymous2);
-            (local, remote)
-        }
-    } else {
-        (None, None)
-    };
-
-    // Parse filter ID and layer ID for CLASSIFY_DROP events
-    let (filter_id, layer_id) = if event_type == NetworkEventType::ClassifyDrop {
-        unsafe {
-            if !event.Anonymous.classifyDrop.is_null() {
-                let drop_info = &*event.Anonymous.classifyDrop;
-                (Some(drop_info.filterId), Some(drop_info.layerId))
-            } else {
-                (None, None)
+        // Parse IP addresses based on IP version (ipVersion: 0=V4, 1=V6)
+        let (local_addr, remote_addr) = if header.ipVersion.0 == 0 {
+            // IPv4
+            unsafe {
+                let local = parse_ipv4_union(&header.Anonymous1);
+                let remote = parse_ipv4_union_remote(&header.Anonymous2);
+                (local, remote)
             }
-        }
-    } else {
-        (None, None)
-    };
+        } else if header.ipVersion.0 == 1 {
+            // IPv6
+            unsafe {
+                let local = parse_ipv6_union(&header.Anonymous1);
+                let remote = parse_ipv6_union_remote(&header.Anonymous2);
+                (local, remote)
+            }
+        } else {
+            (None, None)
+        };
 
-    Some(NetworkEvent {
-        timestamp,
-        event_type,
-        app_path,
-        protocol: header.ipProtocol,
-        local_addr,
-        remote_addr,
-        local_port: header.localPort,
-        remote_port: header.remotePort,
-        filter_id,
-        layer_id,
-    })
-}}
+        // Parse filter ID and layer ID for CLASSIFY_DROP events
+        let (filter_id, layer_id) = if event_type == NetworkEventType::ClassifyDrop {
+            unsafe {
+                if !event.Anonymous.classifyDrop.is_null() {
+                    let drop_info = &*event.Anonymous.classifyDrop;
+                    (Some(drop_info.filterId), Some(drop_info.layerId))
+                } else {
+                    (None, None)
+                }
+            }
+        } else {
+            (None, None)
+        };
+
+        Some(NetworkEvent {
+            timestamp,
+            event_type,
+            app_path,
+            protocol: header.ipProtocol,
+            local_addr,
+            remote_addr,
+            local_port: header.localPort,
+            remote_port: header.remotePort,
+            filter_id,
+            layer_id,
+        })
+    }
+}
 
 /// Convert FILETIME to SystemTime
 fn filetime_to_systemtime(ft: &FILETIME) -> SystemTime {
@@ -313,61 +317,71 @@ fn filetime_to_systemtime(ft: &FILETIME) -> SystemTime {
 }
 
 /// Parse wide string (null-terminated UTF-16)
-unsafe fn parse_wide_string(ptr: *const u16) -> Option<OsString> { unsafe {
-    if ptr.is_null() {
-        return None;
-    }
+unsafe fn parse_wide_string(ptr: *const u16) -> Option<OsString> {
+    unsafe {
+        if ptr.is_null() {
+            return None;
+        }
 
-    // Find the null terminator
-    let mut len = 0;
-    while *ptr.add(len) != 0 {
-        len += 1;
-    }
+        // Find the null terminator
+        let mut len = 0;
+        while *ptr.add(len) != 0 {
+            len += 1;
+        }
 
-    if len == 0 {
-        return None;
-    }
+        if len == 0 {
+            return None;
+        }
 
-    // Convert to OsString
-    let slice = std::slice::from_raw_parts(ptr, len);
-    Some(OsString::from_wide(slice))
-}}
+        // Convert to OsString
+        let slice = std::slice::from_raw_parts(ptr, len);
+        Some(OsString::from_wide(slice))
+    }
+}
 
 /// Parse IPv4 address from union (reads first 4 bytes as u32) - HEADER1_0 version
 unsafe fn parse_ipv4_union(
     addr_union: &windows::Win32::NetworkManagement::WindowsFilteringPlatform::FWPM_NET_EVENT_HEADER1_0,
-) -> Option<IpAddr> { unsafe {
-    // Union contains localAddrV4 as u32
-    let addr_u32 = addr_union.localAddrV4;
-    let bytes = addr_u32.to_ne_bytes();
-    Some(IpAddr::V4(Ipv4Addr::from(bytes)))
-}}
+) -> Option<IpAddr> {
+    unsafe {
+        // Union contains localAddrV4 as u32
+        let addr_u32 = addr_union.localAddrV4;
+        let bytes = addr_u32.to_ne_bytes();
+        Some(IpAddr::V4(Ipv4Addr::from(bytes)))
+    }
+}
 
 /// Parse IPv6 address from union (reads 16-byte array) - HEADER1_0 version
 unsafe fn parse_ipv6_union(
     addr_union: &windows::Win32::NetworkManagement::WindowsFilteringPlatform::FWPM_NET_EVENT_HEADER1_0,
-) -> Option<IpAddr> { unsafe {
-    // Union contains localAddrV6 as byte[16]
-    let bytes = addr_union.localAddrV6.byteArray16;
-    Some(IpAddr::V6(Ipv6Addr::from(bytes)))
-}}
+) -> Option<IpAddr> {
+    unsafe {
+        // Union contains localAddrV6 as byte[16]
+        let bytes = addr_union.localAddrV6.byteArray16;
+        Some(IpAddr::V6(Ipv6Addr::from(bytes)))
+    }
+}
 
 /// Parse IPv4 address from remote union (HEADER1_1 version)
 unsafe fn parse_ipv4_union_remote(
     addr_union: &windows::Win32::NetworkManagement::WindowsFilteringPlatform::FWPM_NET_EVENT_HEADER1_1,
-) -> Option<IpAddr> { unsafe {
-    let addr_u32 = addr_union.remoteAddrV4;
-    let bytes = addr_u32.to_ne_bytes();
-    Some(IpAddr::V4(Ipv4Addr::from(bytes)))
-}}
+) -> Option<IpAddr> {
+    unsafe {
+        let addr_u32 = addr_union.remoteAddrV4;
+        let bytes = addr_u32.to_ne_bytes();
+        Some(IpAddr::V4(Ipv4Addr::from(bytes)))
+    }
+}
 
 /// Parse IPv6 address from remote union (HEADER1_1 version)
 unsafe fn parse_ipv6_union_remote(
     addr_union: &windows::Win32::NetworkManagement::WindowsFilteringPlatform::FWPM_NET_EVENT_HEADER1_1,
-) -> Option<IpAddr> { unsafe {
-    let bytes = addr_union.remoteAddrV6.byteArray16;
-    Some(IpAddr::V6(Ipv6Addr::from(bytes)))
-}}
+) -> Option<IpAddr> {
+    unsafe {
+        let bytes = addr_union.remoteAddrV6.byteArray16;
+        Some(IpAddr::V6(Ipv6Addr::from(bytes)))
+    }
+}
 
 #[cfg(test)]
 mod tests {

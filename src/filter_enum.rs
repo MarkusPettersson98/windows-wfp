@@ -209,110 +209,115 @@ impl FilterEnumerator {
 /// # Safety
 ///
 /// The filter pointer must be valid.
-unsafe fn parse_filter(filter: &FWPM_FILTER0) -> FilterInfo { unsafe {
-    let name = if !filter.displayData.name.is_null() {
-        filter
-            .displayData
-            .name
-            .to_string()
-            .unwrap_or_else(|_| String::new())
-    } else {
-        String::new()
-    };
+unsafe fn parse_filter(filter: &FWPM_FILTER0) -> FilterInfo {
+    unsafe {
+        let name = if !filter.displayData.name.is_null() {
+            filter
+                .displayData
+                .name
+                .to_string()
+                .unwrap_or_else(|_| String::new())
+        } else {
+            String::new()
+        };
 
-    let description = if !filter.displayData.description.is_null() {
-        filter
-            .displayData
-            .description
-            .to_string()
-            .unwrap_or_else(|_| String::new())
-    } else {
-        String::new()
-    };
+        let description = if !filter.displayData.description.is_null() {
+            filter
+                .displayData
+                .description
+                .to_string()
+                .unwrap_or_else(|_| String::new())
+        } else {
+            String::new()
+        };
 
-    let action = match filter.action.r#type {
-        FWP_ACTION_BLOCK => FilterAction::Block,
-        FWP_ACTION_PERMIT => FilterAction::Permit,
-        FWP_ACTION_CALLOUT_TERMINATING => FilterAction::CalloutTerminating,
-        FWP_ACTION_CALLOUT_INSPECTION => FilterAction::CalloutInspection,
-        FWP_ACTION_CALLOUT_UNKNOWN => FilterAction::CalloutUnknown,
-        other => FilterAction::Other(other.0),
-    };
+        let action = match filter.action.r#type {
+            FWP_ACTION_BLOCK => FilterAction::Block,
+            FWP_ACTION_PERMIT => FilterAction::Permit,
+            FWP_ACTION_CALLOUT_TERMINATING => FilterAction::CalloutTerminating,
+            FWP_ACTION_CALLOUT_INSPECTION => FilterAction::CalloutInspection,
+            FWP_ACTION_CALLOUT_UNKNOWN => FilterAction::CalloutUnknown,
+            other => FilterAction::Other(other.0),
+        };
 
-    let provider_key = if !filter.providerKey.is_null() {
-        Some(*filter.providerKey)
-    } else {
-        None
-    };
+        let provider_key = if !filter.providerKey.is_null() {
+            Some(*filter.providerKey)
+        } else {
+            None
+        };
 
-    let weight = match filter.weight.r#type {
-        FWP_UINT8 => filter.weight.Anonymous.uint8 as u64,
-        FWP_UINT16 => filter.weight.Anonymous.uint16 as u64,
-        FWP_UINT32 => filter.weight.Anonymous.uint32 as u64,
-        FWP_UINT64 => {
-            let ptr = filter.weight.Anonymous.uint64;
-            if ptr.is_null() { 0 } else { *ptr }
+        let weight = match filter.weight.r#type {
+            FWP_UINT8 => filter.weight.Anonymous.uint8 as u64,
+            FWP_UINT16 => filter.weight.Anonymous.uint16 as u64,
+            FWP_UINT32 => filter.weight.Anonymous.uint32 as u64,
+            FWP_UINT64 => {
+                let ptr = filter.weight.Anonymous.uint64;
+                if ptr.is_null() { 0 } else { *ptr }
+            }
+            FWP_EMPTY => 0,
+            _ => 0,
+        };
+
+        let app_path = extract_app_path(filter);
+
+        FilterInfo {
+            id: filter.filterId,
+            name,
+            description,
+            action,
+            provider_key,
+            weight,
+            layer_key: filter.layerKey,
+            sublayer_key: filter.subLayerKey,
+            app_path,
+            num_conditions: filter.numFilterConditions,
         }
-        FWP_EMPTY => 0,
-        _ => 0,
-    };
-
-    let app_path = extract_app_path(filter);
-
-    FilterInfo {
-        id: filter.filterId,
-        name,
-        description,
-        action,
-        provider_key,
-        weight,
-        layer_key: filter.layerKey,
-        sublayer_key: filter.subLayerKey,
-        app_path,
-        num_conditions: filter.numFilterConditions,
     }
-}}
+}
 
 /// Extract application path from filter conditions
 ///
 /// Looks for FWPM_CONDITION_ALE_APP_ID in the filter's conditions
 /// and decodes the wide-string blob.
-unsafe fn extract_app_path(filter: &FWPM_FILTER0) -> Option<PathBuf> { unsafe {
-    if filter.numFilterConditions == 0 || filter.filterCondition.is_null() {
-        return None;
+unsafe fn extract_app_path(filter: &FWPM_FILTER0) -> Option<PathBuf> {
+    unsafe {
+        if filter.numFilterConditions == 0 || filter.filterCondition.is_null() {
+            return None;
+        }
+
+        let conditions =
+            std::slice::from_raw_parts(filter.filterCondition, filter.numFilterConditions as usize);
+
+        let condition = conditions
+            .iter()
+            .find(|c| c.fieldKey == CONDITION_ALE_APP_ID)?;
+
+        if condition.conditionValue.r#type != FWP_BYTE_BLOB_TYPE {
+            return None;
+        }
+
+        let blob_ptr = condition.conditionValue.Anonymous.byteBlob;
+        if blob_ptr.is_null() {
+            return None;
+        }
+
+        let blob = &*blob_ptr;
+        if blob.data.is_null() || blob.size == 0 || (blob.size % 2) != 0 {
+            return None;
+        }
+
+        let wide_slice =
+            std::slice::from_raw_parts(blob.data as *const u16, (blob.size / 2) as usize);
+        let null_pos = wide_slice
+            .iter()
+            .position(|&c| c == 0)
+            .unwrap_or(wide_slice.len());
+
+        String::from_utf16(&wide_slice[..null_pos])
+            .ok()
+            .map(PathBuf::from)
     }
-
-    let conditions =
-        std::slice::from_raw_parts(filter.filterCondition, filter.numFilterConditions as usize);
-
-    let condition = conditions
-        .iter()
-        .find(|c| c.fieldKey == CONDITION_ALE_APP_ID)?;
-
-    if condition.conditionValue.r#type != FWP_BYTE_BLOB_TYPE {
-        return None;
-    }
-
-    let blob_ptr = condition.conditionValue.Anonymous.byteBlob;
-    if blob_ptr.is_null() {
-        return None;
-    }
-
-    let blob = &*blob_ptr;
-    if blob.data.is_null() || blob.size == 0 || (blob.size % 2) != 0 {
-        return None;
-    }
-
-    let wide_slice = std::slice::from_raw_parts(blob.data as *const u16, (blob.size / 2) as usize);
-    let null_pos = wide_slice
-        .iter()
-        .position(|&c| c == 0)
-        .unwrap_or(wide_slice.len());
-
-    String::from_utf16(&wide_slice[..null_pos])
-        .ok()
-        .map(PathBuf::from)
-}}
+}
 
 #[cfg(test)]
 mod tests {
