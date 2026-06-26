@@ -250,31 +250,25 @@ unsafe fn parse_network_event(event: &FWPM_NET_EVENT1) -> Option<NetworkEvent> {
         // Parse IP addresses based on IP version (ipVersion: 0=V4, 1=V6)
         let (local_addr, remote_addr) = if header.ipVersion.0 == 0 {
             // IPv4
-            unsafe {
-                let local = parse_ipv4_union(&header.Anonymous1);
-                let remote = parse_ipv4_union_remote(&header.Anonymous2);
-                (local, remote)
-            }
+            let local = parse_ipv4_union(&header.Anonymous1);
+            let remote = parse_ipv4_union_remote(&header.Anonymous2);
+            (local, remote)
         } else if header.ipVersion.0 == 1 {
             // IPv6
-            unsafe {
-                let local = parse_ipv6_union(&header.Anonymous1);
-                let remote = parse_ipv6_union_remote(&header.Anonymous2);
-                (local, remote)
-            }
+            let local = parse_ipv6_union(&header.Anonymous1);
+            let remote = parse_ipv6_union_remote(&header.Anonymous2);
+            (local, remote)
         } else {
             (None, None)
         };
 
         // Parse filter ID and layer ID for CLASSIFY_DROP events
         let (filter_id, layer_id) = if event_type == NetworkEventType::ClassifyDrop {
-            unsafe {
-                if !event.Anonymous.classifyDrop.is_null() {
-                    let drop_info = &*event.Anonymous.classifyDrop;
-                    (Some(drop_info.filterId), Some(drop_info.layerId))
-                } else {
-                    (None, None)
-                }
+            if !event.Anonymous.classifyDrop.is_null() {
+                let drop_info = &*event.Anonymous.classifyDrop;
+                (Some(drop_info.filterId), Some(drop_info.layerId))
+            } else {
+                (None, None)
             }
         } else {
             (None, None)
